@@ -1,5 +1,7 @@
 package com.kittenml.tts.ui.screen
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,8 +17,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -75,7 +79,8 @@ fun TTSScreen(viewModel: TTSViewModel = viewModel()) {
             hasAudio = generatedAudio != null,
             inputEmpty = inputText.isBlank(),
             onGenerate = { viewModel.generate() },
-            onPlay = { viewModel.play() }
+            onPlay = { viewModel.play() },
+            onDownload = { viewModel.download() }
         )
 
         Spacer(Modifier.height(12.dp))
@@ -90,6 +95,11 @@ fun TTSScreen(viewModel: TTSViewModel = viewModel()) {
                 fontFamily = FontFamily.Monospace
             )
         }
+
+        Spacer(Modifier.height(32.dp))
+
+        // Footer
+        Footer()
 
         Spacer(Modifier.height(24.dp))
     }
@@ -312,7 +322,8 @@ private fun ActionButtons(
     hasAudio: Boolean,
     inputEmpty: Boolean,
     onGenerate: () -> Unit,
-    onPlay: () -> Unit
+    onPlay: () -> Unit,
+    onDownload: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -365,5 +376,57 @@ private fun ActionButtons(
                 Text("Play", fontSize = 15.sp, fontWeight = FontWeight.Bold)
             }
         }
+    }
+
+    // Download button (full width, below play/generate row)
+    if (hasAudio) {
+        Spacer(Modifier.height(12.dp))
+        OutlinedButton(
+            onClick = onDownload,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            border = ButtonDefaults.outlinedButtonBorder(enabled = true).copy(
+                brush = androidx.compose.ui.graphics.SolidColor(PrimaryAccent.copy(alpha = 0.5f))
+            ),
+            contentPadding = PaddingValues(vertical = 14.dp)
+        ) {
+            Text(
+                "Download WAV",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = PrimaryAccent
+            )
+        }
+    }
+}
+
+@Composable
+private fun Footer() {
+    val context = LocalContext.current
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        HorizontalDivider(color = DarkAccent.copy(alpha = 0.3f))
+        Spacer(Modifier.height(16.dp))
+        Text(
+            "Made with \u2764\uFE0F by rockerritesh",
+            color = Neutral,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "github.com/rockerritesh",
+            color = PrimaryAccent.copy(alpha = 0.7f),
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.clickable {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/rockerritesh"))
+                context.startActivity(intent)
+            }
+        )
     }
 }

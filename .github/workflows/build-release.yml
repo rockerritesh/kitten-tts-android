@@ -2,6 +2,9 @@ name: Build & Release APK
 
 on:
   push:
+    branches:
+      - main
+      - 'feature/**'
     tags:
       - 'v*'
   workflow_dispatch:
@@ -73,28 +76,15 @@ jobs:
         env:
           ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
 
-      - name: Build Release APK
-        run: gradle assembleRelease
-        env:
-          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
-
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: kitten-tts-debug
           path: app/build/outputs/apk/debug/*.apk
 
-      - name: Upload Release APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: kitten-tts-release
-          path: app/build/outputs/apk/release/*.apk
-
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            app/build/outputs/apk/debug/*.apk
-            app/build/outputs/apk/release/*.apk
+          files: app/build/outputs/apk/debug/*.apk
           generate_release_notes: true

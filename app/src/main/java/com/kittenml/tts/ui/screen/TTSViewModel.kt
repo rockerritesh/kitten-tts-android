@@ -92,6 +92,18 @@ class TTSViewModel(application: Application) : AndroidViewModel(application) {
         engine.audioPlayer.play(audio)
     }
 
+    fun download() {
+        val audio = _generatedAudio.value ?: return
+        val timestamp = System.currentTimeMillis() / 1000
+        val fileName = "kitten_tts_${_selectedVoice.value.lowercase()}_$timestamp"
+        val result = AudioPlayer.saveAsWav(getApplication(), audio, fileName)
+        if (result != null) {
+            _statusMessage.value = "Saved to Downloads/$result"
+        } else {
+            _statusMessage.value = "Failed to save audio"
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
         engine.audioPlayer.stop()
