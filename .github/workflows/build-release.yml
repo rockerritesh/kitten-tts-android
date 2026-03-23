@@ -33,32 +33,32 @@ jobs:
 
       - name: Build espeak-ng for Android
         run: |
-          sudo apt-get update
-          sudo apt-get install -y autoconf automake libtool pkg-config
-
           export ANDROID_NDK=$ANDROID_HOME/ndk/27.0.12077973
           export TOOLCHAIN=$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64
-          export TARGET=aarch64-linux-android
-          export API=26
-          export CC=$TOOLCHAIN/bin/${TARGET}${API}-clang
-          export AR=$TOOLCHAIN/bin/llvm-ar
-          export RANLIB=$TOOLCHAIN/bin/llvm-ranlib
 
           git clone --depth 1 https://github.com/espeak-ng/espeak-ng.git /tmp/espeak-ng-build
           cd /tmp/espeak-ng-build
-          ./autogen.sh
-          ./configure \
-            --host=$TARGET \
-            --prefix=/tmp/espeak-ng-out \
-            --without-pcaudiolib \
-            --without-speechplayer \
-            --without-sonic \
-            CC=$CC AR=$AR RANLIB=$RANLIB \
-            CFLAGS="-fPIC"
-          make -j$(nproc)
 
+          # Use cmake cross-compilation with Android NDK toolchain
+          mkdir build-android && cd build-android
+          cmake .. \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK/build/cmake/android.toolchain.cmake \
+            -DANDROID_ABI=arm64-v8a \
+            -DANDROID_PLATFORM=android-26 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SHARED_LIBS=ON \
+            -DUSE_ASYNC=OFF \
+            -DUSE_MBROLA=OFF \
+            -DUSE_LIBPCAUDIO=OFF \
+            -DUSE_KLATT=OFF \
+            -DUSE_SPEECHPLAYER=OFF \
+            -DCMAKE_C_FLAGS="-fPIC"
+          cmake --build . --config Release -j$(nproc)
+
+          # Find and copy the built .so
           mkdir -p $GITHUB_WORKSPACE/app/src/main/jniLibs/arm64-v8a
-          cp src/.libs/libespeak-ng.so $GITHUB_WORKSPACE/app/src/main/jniLibs/arm64-v8a/
+          find . -name "libespeak-ng.so" -exec cp {} $GITHUB_WORKSPACE/app/src/main/jniLibs/arm64-v8a/ \;
+          ls -la $GITHUB_WORKSPACE/app/src/main/jniLibs/arm64-v8a/
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
