@@ -347,37 +347,34 @@ class KittenTTSEngine(private val context: Context) {
             longArrayOf(1)
         )
 
-        val inputs = mapOf(
-            "input_ids" to idTensor,
-            "style" to styleTensor,
-            "speed" to speedTensor
-        )
+        try {
+            val inputs = mapOf(
+                "input_ids" to idTensor,
+                "style" to styleTensor,
+                "speed" to speedTensor
+            )
 
-        val results = session.run(inputs, setOf("waveform"))
+            val results = session.run(inputs, setOf("waveform"))
+            try {
+                val waveformTensor = results[0] as OnnxTensor
+                val rawSamples = waveformTensor.floatBuffer
+                val totalSamples = rawSamples.remaining()
+                val trimCount = minOf(5000, totalSamples)
+                val usableCount = maxOf(0, totalSamples - trimCount)
 
-        val waveformTensor = results[0] as OnnxTensor
-        val rawSamples = waveformTensor.floatBuffer
-        val totalSamples = rawSamples.remaining()
-        val trimCount = minOf(5000, totalSamples)
-        val usableCount = maxOf(0, totalSamples - trimCount)
+                if (usableCount == 0) return FloatArray(0)
 
-        if (usableCount == 0) {
+                val samples = FloatArray(usableCount)
+                rawSamples.get(samples, 0, usableCount)
+                return samples
+            } finally {
+                results.close()
+            }
+        } finally {
             idTensor.close()
             styleTensor.close()
             speedTensor.close()
-            results.close()
-            return FloatArray(0)
         }
-
-        val samples = FloatArray(usableCount)
-        rawSamples.get(samples, 0, usableCount)
-
-        idTensor.close()
-        styleTensor.close()
-        speedTensor.close()
-        results.close()
-
-        return samples
     }
 
     // ── Vocabulary (exact copy from iOS — order is critical) ──
