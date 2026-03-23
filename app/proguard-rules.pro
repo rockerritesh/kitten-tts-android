@@ -1,0 +1,3 @@
+-keep class com.kittenml.tts.engine.EspeakBridge { native <methods>; }
+-keep class ai.onnxruntime.** { *; }
+-dontwarn ai.onnxruntime.**

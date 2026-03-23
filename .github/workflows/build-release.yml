@@ -1,0 +1,95 @@
+name: Build & Release APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Checkout LFS objects
+        run: git lfs pull
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK
+        run: sdkmanager --install "ndk;27.0.12077973"
+
+      - name: Build espeak-ng for Android
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y autoconf automake libtool pkg-config
+
+          export ANDROID_NDK=$ANDROID_HOME/ndk/27.0.12077973
+          export TOOLCHAIN=$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64
+          export TARGET=aarch64-linux-android
+          export API=26
+          export CC=$TOOLCHAIN/bin/${TARGET}${API}-clang
+          export AR=$TOOLCHAIN/bin/llvm-ar
+          export RANLIB=$TOOLCHAIN/bin/llvm-ranlib
+
+          git clone --depth 1 https://github.com/espeak-ng/espeak-ng.git /tmp/espeak-ng-build
+          cd /tmp/espeak-ng-build
+          ./autogen.sh
+          ./configure \
+            --host=$TARGET \
+            --prefix=/tmp/espeak-ng-out \
+            --without-pcaudiolib \
+            --without-speechplayer \
+            --without-sonic \
+            CC=$CC AR=$AR RANLIB=$RANLIB \
+            CFLAGS="-fPIC"
+          make -j$(nproc)
+
+          mkdir -p $GITHUB_WORKSPACE/app/src/main/jniLibs/arm64-v8a
+          cp src/.libs/libespeak-ng.so $GITHUB_WORKSPACE/app/src/main/jniLibs/arm64-v8a/
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
+
+      - name: Build Release APK
+        run: ./gradlew assembleRelease
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: kitten-tts-debug
+          path: app/build/outputs/apk/debug/*.apk
+
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: kitten-tts-release
+          path: app/build/outputs/apk/release/*.apk
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/release/*.apk
+          generate_release_notes: true
