@@ -148,7 +148,7 @@ class KittenTTSEngine(private val context: Context) {
 
     // ── Text Processing (exact port of iOS) ──
 
-    private fun chunkText(text: String, maxLen: Int = 400): List<String> {
+    private fun chunkText(text: String, maxLen: Int = 300): List<String> {
         val trimmed = text.trim()
         if (trimmed.isEmpty()) return emptyList()
 
@@ -284,13 +284,22 @@ class KittenTTSEngine(private val context: Context) {
                     val normalized = basicEnglishTokenize(phonemes)
                     val tokens = phonemesToTokens(normalized)
 
+                    // BERT positional embeddings support max 512 tokens.
+                    // Truncate phoneme tokens to 509 so that with [pad] + tokens + [eot] + [pad] = 512 max.
+                    val maxPhonemeTokens = 509
+                    val truncated = if (tokens.size > maxPhonemeTokens) {
+                        tokens.subList(0, maxPhonemeTokens)
+                    } else {
+                        tokens
+                    }
+
                     // [pad] + tokens + [end-of-text=10] + [pad]
-                    tokens.add(0, 0L)
-                    tokens.add(10L)
-                    tokens.add(0L)
+                    truncated.add(0, 0L)
+                    truncated.add(10L)
+                    truncated.add(0L)
 
                     val refId = minOf(cleaned.length, voicePositions.size - 1)
-                    PreparedChunk(tokens.toLongArray(), refId)
+                    PreparedChunk(truncated.toLongArray(), refId)
                 }
 
                 // Speed prior
