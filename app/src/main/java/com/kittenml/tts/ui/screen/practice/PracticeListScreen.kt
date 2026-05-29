@@ -43,7 +43,7 @@ fun PracticeListScreen(
             .padding(horizontal = 20.dp)
     ) {
         Spacer(Modifier.height(12.dp))
-        Text("IELTS Speaking", color = Surface, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+        Text("IELTS Reading", color = Surface, fontSize = 28.sp, fontWeight = FontWeight.Bold)
         Text(
             "Read each passage aloud — we'll score your accuracy.",
             color = Neutral, fontSize = 14.sp, fontWeight = FontWeight.Medium

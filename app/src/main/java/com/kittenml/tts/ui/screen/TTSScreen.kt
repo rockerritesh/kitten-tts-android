@@ -114,7 +114,7 @@ private fun Header(state: EngineState, selectedModel: TTSModel) {
     ) {
         Column {
             Text(
-                "Kitten TTS",
+                "Voice Studio",
                 color = Surface,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold
