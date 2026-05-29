@@ -1,0 +1,16 @@
+{
+  "encoderModel": "whisper_encoder.onnx",
+  "decoderModel": "whisper_decoder.onnx",
+  "vocabFile": "vocab.json",
+  "decoderStartIds": [
+    50257,
+    50362
+  ],
+  "eosTokenId": 50256,
+  "maxNewTokens": 224,
+  "inputFeaturesName": "input_features",
+  "encoderHiddenName": "last_hidden_state",
+  "decoderInputIdsName": "input_ids",
+  "decoderEncoderHiddenName": "encoder_hidden_states",
+  "decoderLogitsName": "logits"
+}
